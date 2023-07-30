@@ -16,4 +16,5 @@ path = "src/bin/client.rs"
 [dependencies]
 async-std = { version = "1.12.0", features = ["attributes"] }
 async-std-test = "0.0.4"
+nix = "0.26.2"
 signal-hook = "0.3.17"
