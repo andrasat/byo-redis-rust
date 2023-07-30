@@ -1,4 +1,5 @@
 use async_std::{
+    io::{ReadExt, WriteExt},
     net::{TcpListener, TcpStream},
     stream::StreamExt,
 };
@@ -6,6 +7,18 @@ use async_std::{
 #[derive(Debug)]
 pub struct Server {
     listener: TcpListener,
+}
+
+async fn handle_connection(mut stream: TcpStream) {
+    println!("Incoming connection from: {}", stream.peer_addr().unwrap());
+    let mut buf = [0; 50];
+    stream.read(&mut buf).await.unwrap();
+
+    let text = String::from_utf8_lossy(&buf);
+    println!("Received: {}", text);
+
+    stream.write_all(&buf).await.unwrap();
+    stream.flush().await.unwrap();
 }
 
 impl Server {
@@ -21,18 +34,18 @@ impl Server {
         return Server { listener };
     }
 
-    pub async fn listen(&self, handle_connection: fn(stream: TcpStream)) {
+    pub async fn listen(&mut self) {
         let mut incoming = self.listener.incoming();
 
         while let Some(stream) = incoming.next().await {
             match stream {
-                Ok(stream) => handle_connection(stream),
+                Ok(stream) => handle_connection(stream).await,
                 Err(e) => panic!("Failed to establish a connection: {}", e),
             };
         }
     }
 
     pub fn close(self) {
-        drop(self.listener);
+        drop(self.listener)
     }
 }
