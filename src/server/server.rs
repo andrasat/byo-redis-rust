@@ -1,8 +1,12 @@
+use std::os::fd::AsRawFd;
+
 use async_std::{
     io::{ReadExt, WriteExt},
     net::{TcpListener, TcpStream},
     stream::StreamExt,
 };
+use nix::sys::socket::setsockopt;
+use nix::sys::socket::sockopt::ReuseAddr;
 
 #[derive(Debug)]
 pub struct Server {
@@ -29,6 +33,12 @@ impl Server {
         let listener = match TcpListener::bind(addr).await {
             Ok(listener) => listener,
             Err(e) => panic!("Failed to bind to address: {}", e),
+        };
+
+        let fd = listener.as_raw_fd();
+        match setsockopt(fd, ReuseAddr, &true) {
+            Ok(_) => (),
+            Err(e) => panic!("Failed to set socket option: {}", e),
         };
 
         return Server { listener };
