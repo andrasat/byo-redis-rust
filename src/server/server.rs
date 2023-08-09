@@ -9,7 +9,10 @@ use futures::StreamExt;
 use nix::sys::socket::setsockopt;
 use nix::sys::socket::sockopt::ReuseAddr;
 
-use crate::{protocol_parser::message_parser, r#const::MAX_MSG};
+use crate::{
+    protocol_parser::{message_builder, message_parser},
+    r#const::MAX_MSG,
+};
 
 #[derive(Debug)]
 pub struct Server {
@@ -21,9 +24,8 @@ async fn handle_connection(mut stream: TcpStream) {
     let (_, data) = message_parser(&stream, buf).await;
 
     let final_msg = format!("{}{}", data, ", from server!");
-    let final_len = final_msg.len();
+    let response = message_builder(final_msg).unwrap();
 
-    let response = format!("{}\r\n{}", final_len, final_msg);
     match stream.write(response.as_bytes()).await {
         Ok(n) => println!("Wrote {} bytes", n),
         Err(e) => panic!("Failed to write to stream: {}", e),
