@@ -11,9 +11,9 @@ async fn main() {
         client.send(&body).await;
     }
 
-    // {
-    //     let msg = "Hello, world2!";
-    //     let body = message_builder(msg.to_string()).unwrap();
-    //     client.send(&body).await;
-    // }
+    {
+        let msg = "Hello, world2!";
+        let body = message_builder(msg.to_string()).unwrap();
+        client.send(&body).await;
+    }
 }

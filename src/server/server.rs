@@ -1,11 +1,11 @@
-use std::os::fd::AsRawFd;
+use std::{io::ErrorKind, os::fd::AsRawFd};
 
 use async_std::{
     io::WriteExt,
     net::{TcpListener, TcpStream},
     task::spawn,
 };
-use futures::StreamExt;
+use futures::{AsyncReadExt, StreamExt};
 use nix::sys::socket::setsockopt;
 use nix::sys::socket::sockopt::ReuseAddr;
 
@@ -20,16 +20,25 @@ pub struct Server {
 }
 
 async fn handle_connection(mut stream: TcpStream) {
-    let buf = [0; MAX_MSG];
-    let (_, data) = message_parser(&stream, buf).await;
+    let mut buf = [0; MAX_MSG];
+    loop {
+        match stream.read(&mut buf).await {
+            Ok(0) => break,
+            Ok(n) => println!("Read {} bytes", n),
+            Err(ref e) if e.kind() == ErrorKind::Interrupted => continue,
+            Err(e) => panic!("Failed to read from stream: {}", e),
+        };
 
-    let final_msg = format!("{}{}", data, ", from server!");
-    let response = message_builder(final_msg).unwrap();
+        let (_, data) = message_parser(&buf).await;
 
-    match stream.write(response.as_bytes()).await {
-        Ok(n) => println!("Wrote {} bytes", n),
-        Err(e) => panic!("Failed to write to stream: {}", e),
-    };
+        let final_msg = format!("{}{}", data, ", from server!");
+        let response = message_builder(final_msg).unwrap();
+
+        match stream.write(response.as_bytes()).await {
+            Ok(n) => println!("Wrote {} bytes", n),
+            Err(e) => panic!("Failed to write to stream: {}", e),
+        };
+    }
 
     match stream.flush().await {
         Ok(_) => println!("Flushed"),
@@ -69,6 +78,7 @@ impl Server {
     }
 
     pub fn close(self) {
-        drop(self.listener)
+        drop(self.listener);
+        println!("Server closed");
     }
 }

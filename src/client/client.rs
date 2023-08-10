@@ -1,4 +1,7 @@
-use async_std::{io::WriteExt, net::TcpStream};
+use async_std::{
+    io::{ReadExt, WriteExt},
+    net::TcpStream,
+};
 
 use crate::{protocol_parser::message_parser, r#const::MAX_MSG};
 
@@ -29,8 +32,13 @@ impl Client {
         };
         stream_clone.flush().await.unwrap();
 
-        let buf = [0; MAX_MSG];
-        let (len, data) = message_parser(&stream_clone, buf).await;
+        let mut buf = [0; MAX_MSG];
+        match stream_clone.read(&mut buf).await {
+            Ok(n) => println!("Read {} bytes", n),
+            Err(e) => panic!("Failed to read from stream: {}", e),
+        };
+
+        let (len, data) = message_parser(&mut buf).await;
 
         println!("Received {} bytes", len);
         println!("Response from server: {}", data);

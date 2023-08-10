@@ -1,5 +1,4 @@
 use crate::r#const::MAX_MSG;
-use async_std::{io::ReadExt, net::TcpStream};
 use std::io::Error;
 
 const FIRST_PART_SIZE: usize = 4;
@@ -26,12 +25,7 @@ pub fn message_builder(msg: String) -> Result<String, Error> {
     return Ok(data);
 }
 
-pub async fn message_parser(mut stream: &TcpStream, mut buf: [u8; MAX_MSG]) -> (String, String) {
-    match stream.read(&mut buf).await {
-        Ok(n) => println!("Read {} bytes", n),
-        Err(e) => panic!("Failed to read from stream: {}", e),
-    };
-
+pub async fn message_parser(buf: &[u8]) -> (String, String) {
     let cloned_buf = buf.clone();
 
     let len_data = cloned_buf[..FIRST_PART_SIZE].to_vec();
