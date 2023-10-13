@@ -26,7 +26,7 @@ pub fn message_builder(msg: String) -> Result<String, Error> {
 }
 
 pub async fn message_parser(buf: &[u8]) -> (String, String) {
-    let cloned_buf = buf.clone();
+    let cloned_buf = buf;
 
     let len_data = cloned_buf[..FIRST_PART_SIZE].to_vec();
     let msg_len = match String::from_utf8(len_data) {
