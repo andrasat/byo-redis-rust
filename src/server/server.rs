@@ -31,7 +31,7 @@ async fn handle_connection(mut stream: TcpStream) {
 
         let (_, data) = message_parser(&buf).await;
 
-        let final_msg = format!("{}{}", data, ", from server!");
+        let final_msg = format!("{}", data);
         let response = message_builder(final_msg).unwrap();
 
         match stream.write(response.as_bytes()).await {
